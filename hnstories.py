@@ -121,8 +121,9 @@ def init_db(filename):
     db = sqlite3.connect(filename)
     cursor = db.cursor()
     cursor.executescript('CREATE TABLE stories(id, title, link, posted, user, points, description);'
-                         'CREATE INDEX story_date on stories(posted);'
-                         'CREATE INDEX story_id on stories(id);')
+                         'CREATE INDEX story_date ON stories(posted);'
+                         'CREATE UNIQUE INDEX story_id ON stories(id);'
+                         'CREATE INDEX points ON stories(points);')
     db.commit()
     db.close()
 
@@ -147,7 +148,7 @@ def get_saved_stories(user, session):
                     values.append(value)
                 keys_fmt = ', '.join(fields)
                 values_fmt = ','.join(['?'] * len(values))
-                cursor.execute('insert into stories (%s) values (%s)' % (
+                cursor.execute('REPLACE INTO stories (%s) VALUES (%s)' % (
                                 keys_fmt, values_fmt), values)
                 db.commit()
             pprint.pprint(result)
