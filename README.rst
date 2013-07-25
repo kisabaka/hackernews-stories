@@ -1,7 +1,7 @@
 Hacker News Stories
 ===================
 
-Tool for exporting saved stories from `Hacker News <http://news.ycombinator.com/>`_.
+Tool for exporting saved stories from `Hacker News <https://news.ycombinator.com/>`_.
 
 Usage:
 ------
@@ -17,6 +17,6 @@ Then import your saved stories:
 
 ::
 
-    $ python hnstories.py <username> <cookie>
+    $ python hnstories.py <hn-username>
 
-Where ``cookie`` is the ``user`` cookie.
+

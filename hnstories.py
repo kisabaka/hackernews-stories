@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 import re
 import os
 import time
@@ -22,6 +22,7 @@ sel_link = CSSSelector('a')
 sel_span = CSSSelector('span')
 sel_story = CSSSelector('td.title')
 sel_comment = CSSSelector('td.default')
+sel_hidden = CSSSelector('input[type="hidden"]')
 
 more_link_re = re.compile('/x\?fnid=.*$')
 meta_link_re = re.compile('(user|item)\?id=(.*)$')
@@ -126,17 +127,17 @@ def init_db(filename):
     db.close()
 
 
-def get_saved_stories(user, user_cookie):
+def get_saved_stories(user, session):
     '''Gets all of a user's saved stories and stores them in a SQLite3 database'''
     if not os.path.isfile(DB_FILE):
         init_db(DB_FILE)
     db = sqlite3.connect(DB_FILE)
     cursor = db.cursor()
-    url = 'http://news.ycombinator.com/saved?id=%s' % user
+    url = 'https://news.ycombinator.com/saved?id=%s' % user
     try:
         while 1:
             print "Saving stories from", url
-            r = requests.get(url, cookies={'user': user_cookie})
+            r = session.get(url)
             result = get_stories(r.content)
             for item in result['items']:
                 fields = []
@@ -151,7 +152,7 @@ def get_saved_stories(user, user_cookie):
                 db.commit()
             pprint.pprint(result)
             if result.get('more'):
-                url = 'http://news.ycombinator.com' + result['more']
+                url = 'https://news.ycombinator.com' + result['more']
                 time.sleep(5)  # See http://news.ycombinator.com/robots.txt
             else:
                 break
@@ -160,8 +161,17 @@ def get_saved_stories(user, user_cookie):
 
 
 def login(user, passwd):
-    '''Login to HN'''
-    raise NotImplementedError("Still have to do this")
+    '''Login to HN. Returns a requests.sessions.Session object'''
+    sess = requests.session()
+    res = sess.get('https://news.ycombinator.com/newslogin')
+    doc = get_document(res.content)
+    params = {'u': user, 'p': passwd}
+    for hidden in sel_hidden(doc):
+        if hidden.name == 'fnid':
+            params['fnid'] = hidden.value
+    r = sess.post('https://news.ycombinator.com/y', params=params)
+    assert r.status_code == 200, "Unexpected status code: %s" % r.status_code
+    return sess
 
 
 def fetch():
@@ -170,5 +180,12 @@ def fetch():
 
 if __name__ == '__main__':
     import sys
-    get_saved_stories(sys.argv[1], sys.argv[2])
+    import getpass
+    try:
+        user = sys.argv[1]
+    except IndexError:
+        print >> sys.stderr, "Usage: %s username" % sys.argv[0]
+        exit(1)
+    session = login(user, getpass.getpass("Password: "))
+    get_saved_stories(user, session)
 
