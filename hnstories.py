@@ -170,6 +170,7 @@ def login(user, passwd):
     for hidden in sel_hidden(doc):
         if hidden.name == 'fnid':
             params['fnid'] = hidden.value
+            break
     r = sess.post('https://news.ycombinator.com/y', params=params)
     assert r.status_code == 200, "Unexpected status code: %s" % r.status_code
     return sess
