@@ -1,3 +1,4 @@
 lxml
 html5lib
 requests
+cssselect
